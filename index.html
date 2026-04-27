@@ -5,29 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人代購作業助手</title>
     
-    <!-- 1. 載入視覺樣式 -->
+    <!-- 1. 載入 CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #F2ECE4; -webkit-tap-highlight-color: transparent; }
-        .animate-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { display: none; }
         select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 核心庫 (順序極其重要) -->
+    <!-- 2. 核心庫 (順序必須正確) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     
-    <!-- 3. Firebase SDK -->
+    <!-- 3. 圖示庫 (只保留 React 版，避免 Infinity 衝突) -->
+    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
+
+    <!-- 4. Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <!-- 4. 圖示庫 -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/lucide-react@latest"></script>
 
     <!-- 5. 轉譯器 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
@@ -39,13 +38,14 @@
         (() => {
             const { useState, useEffect, useMemo, useRef } = React;
             
-            // 備援圖示組件 (解決外部庫載入失敗的問題)
+            // 修正圖示組件，直接從全域物件抓取
             const Icon = ({ name, size = 24, className = "" }) => {
-                const LucideIcon = (window.LucideReact && window.LucideReact[name]) || (window.lucideReact && window.lucideReact[name]);
-                if (LucideIcon) return <LucideIcon size={size} className={className} />;
-                
-                // 如果外部庫真的失敗，顯示簡單的圓點作為備援，避免畫面當機
-                return <span className={`inline-block bg-current rounded-full ${className}`} style={{ width: size, height: size, opacity: 0.5 }}></span>;
+                const Lib = window.LucideReact || window.lucideReact;
+                if (!Lib || !Lib[name]) {
+                    return <span className={`inline-block bg-gray-300 rounded-full ${className}`} style={{ width: size, height: size }}></span>;
+                }
+                const LucideIcon = Lib[name];
+                return <LucideIcon size={size} className={className} />;
             };
 
             // --- 核心配置：請務必填入您的 Firebase 資訊 ---
@@ -81,23 +81,26 @@
                     categories: ["哆啦A夢", "進擊的巨人", "任天堂", "迪士尼", "Beams", "其他"]
                 });
                 const [newProduct, setNewProduct] = useState({ category: '其他', name: '', originalPrice: '', proxyPrice: '', imageUrl: '' });
+                const [newCatInput, setNewCatInput] = useState('');
                 const fileInputRef = useRef(null);
 
                 useEffect(() => {
                     auth.signInAnonymously().then(cred => setUser(cred.user));
+                    
                     const unsubP = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products')
                         .onSnapshot((snap) => {
                             setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                             setLoading(false);
-                        }, () => setLoading(false));
+                        }, (err) => setLoading(false));
 
-                    auth.onAuthStateChanged(u => {
+                    const unsubAuth = auth.onAuthStateChanged(u => {
                         if(u) {
+                            setUser(u);
                             db.collection('artifacts').doc(appId).collection('users').doc(u.uid).collection('settings').doc('config')
                             .onSnapshot(doc => { if(doc.exists) setSettings(prev => ({...prev, ...doc.data()})); });
                         }
                     });
-                    return () => unsubP();
+                    return () => { unsubP(); unsubAuth(); };
                 }, []);
 
                 const calculateProxyPrice = (orig) => {
@@ -115,10 +118,18 @@
                     });
                     try {
                         await fetch(GAS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ customerName, items: orderItems, timestamp: new Date().toLocaleString() }) });
-                        alert("同步成功！");
+                        alert("訂單已同步至總表！");
                         setCart({}); setCustomerName(''); setGeneratedMsg('');
                     } catch (e) { alert("同步失敗"); }
                     finally { setIsSubmitting(false); }
+                };
+
+                const saveGlobalSettings = async () => {
+                    if (!user) return alert("尚未連線");
+                    try {
+                        await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(settings);
+                        alert("設定已儲存");
+                    } catch (e) { alert("儲存失敗"); }
                 };
 
                 if (loading) return <div className="flex h-screen items-center justify-center"><Icon name="Loader2" className="animate-spin text-[#A68B77]" size={40} /></div>;
@@ -165,7 +176,7 @@
                                     <div className="space-y-3 pb-20">
                                         {products.filter(p => orderFilterCategory === '全部' || p.category === orderFilterCategory).map(p => (
                                             <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 active:scale-[0.98]">
-                                                <div className="w-20 h-20 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
+                                                <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
                                                     {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-7 text-[#D9C5B2]" size={24} />}
                                                 </div>
                                                 <div className="flex-1 truncate">
@@ -182,7 +193,7 @@
                                         ))}
                                     </div>
                                     {Object.keys(cart).length > 0 && (
-                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50">
+                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in slide-in-from-bottom">
                                             <p className="text-2xl font-black">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
                                             <button onClick={() => {
                                                 const itemsText = Object.entries(cart).map(([id, q]) => { const p = products.find(i => i.id === id); return `${p.name} x ${q} = $${p.proxyPrice * q}`; }).join('\n');
@@ -210,7 +221,7 @@
                                         </div>
                                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={e => { const r = new FileReader(); r.onloadend = () => setNewProduct(p => ({...p, imageUrl: r.result})); r.readAsDataURL(e.target.files[0]); }} />
                                         <div className="space-y-4">
-                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none shadow-sm" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
                                             <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
                                             <div className="grid grid-cols-2 gap-4">
                                                 <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
@@ -227,11 +238,25 @@
                                     <section className="bg-white p-7 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-7">
                                         <div className="space-y-4">
                                             <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="Tag" size={14} className="text-[#A68B77]"/>分類管理</label>
-                                            <div className="flex gap-2"><input type="text" placeholder="新類別" className="flex-1 p-3.5 bg-[#F9F7F5] rounded-xl text-xs font-bold outline-none" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} /><button onClick={() => { if(!newCatInput)return; const n={...settings,categories:[...settings.categories,newCatInput]}; setSettings(n); db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n); setNewCatInput(''); }} className="bg-[#5D544C] text-white px-5 rounded-xl font-bold">+</button></div>
-                                            <div className="flex flex-wrap gap-2">{settings.categories.map(c => <span key={c} className="bg-[#F2ECE4] px-4 py-2 rounded-lg text-[10px] font-black border border-[#E5DED4] flex items-center gap-2 text-[#5D544C]">{c}{c!=='其他' && <button onClick={()=>{const n={...settings,categories:settings.categories.filter(x=>x!==c)};setSettings(n);db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n);}}><Icon name="X" size={10}/></button>}</span>)}</div>
+                                            <div className="flex gap-2">
+                                                <input type="text" placeholder="新類別" className="flex-1 p-3.5 bg-[#F9F7F5] rounded-xl text-xs font-bold outline-none" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} />
+                                                <button onClick={() => { if(!newCatInput || !user) return; const n={...settings,categories:[...settings.categories,newCatInput]}; setSettings(n); db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n); setNewCatInput(''); }} className="bg-[#5D544C] text-white px-5 rounded-xl font-bold shadow-md active:scale-90 transition-transform">+</button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                {settings.categories.map(c => (
+                                                    <span key={c} className="bg-[#F2ECE4] px-4 py-2 rounded-lg text-[10px] font-black border border-[#E5DED4] flex items-center gap-2 text-[#5D544C]">
+                                                        {c}
+                                                        {c!=='其他' && <button onClick={()=>{ if(!user) return; const n={...settings,categories:settings.categories.filter(x=>x!==c)};setSettings(n);db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n);}}><Icon name="X" size={10}/></button>}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <textarea rows="5" className="w-full p-5 bg-[#F9F7F5] rounded-2xl text-xs font-mono outline-none text-[#5D544C] border border-[#E5DED4]" value={settings.bankInfo} onChange={e => setSettings({...settings, bankInfo: e.target.value})} />
-                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(settings); alert("設定更新成功"); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">更新系統設定</button>
+                                        <div className="h-px bg-[#F2ECE4] w-full"></div>
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="Tag" size={14} className="text-[#A68B77]"/>匯款資訊範本</label>
+                                            <textarea rows="5" className="w-full p-5 bg-[#F9F7F5] rounded-2xl text-xs font-mono outline-none text-[#5D544C] border border-[#E5DED4]" value={settings.bankInfo} onChange={e => setSettings({...settings, bankInfo: e.target.value})} />
+                                        </div>
+                                        <button onClick={saveGlobalSettings} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">更新系統設定</button>
                                     </section>
                                 </div>
                             )}
