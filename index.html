@@ -40,11 +40,17 @@
         
         // 修正圖示組件，確保直接抓取 Lucide 資源
         const Icon = ({ name, size = 24, className = "" }) => {
-            const Lib = window.LucideReact || window.lucide;
-            if (!Lib || !Lib[name]) return null;
-            const LucideIcon = Lib[name];
-            return <LucideIcon size={size} className={className} />;
-        };
+    // 嘗試抓取所有可能的全域變數
+    const Lib = window.LucideReact || window.lucide || window.Lucide;
+    
+    if (!Lib || !Lib[name]) {
+        // 偵錯用：如果還是抓不到，顯示一個佔位符，這樣您就知道是庫沒讀取到
+        return <div className={`inline-block border border-[#E5DED4] rounded-sm ${className}`} style={{ width: size, height: size }}></div>;
+    }
+    
+    const LucideIcon = Lib[name];
+    return <LucideIcon size={size} className={className} />;
+};
 
         const firebaseConfig = {
             apiKey: "AIzaSyASLINtHCAfw8kzW00vENpqMP1--I6eHWE",
@@ -156,24 +162,45 @@
                                 <div className="space-y-3 pb-20">
                                     {products.filter(p => orderFilterCategory === '全部' || p.category === orderFilterCategory).map(p => (
                                         <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
-                                                {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-5 text-[#D9C5B2]" size={24} />}
-                                            </div>
-                                            <div className="flex-1 truncate">
-                                                <p className="text-[9px] font-black text-[#A68B77] uppercase">{p.category}</p>
-                                                <h4 className="font-bold text-sm truncate">{p.name}</h4>
-                                                <p className="font-black text-[#A68B77] text-lg">${p.proxyPrice}</p>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <button onClick={() => { const q = (cart[p.id] || 0) - 1; if(q<=0){const {[p.id]:_, ...rest}=cart; setCart(rest)}else{setCart({...cart,[p.id]:q})} }}>
-                                                    <Icon name="MinusCircle" size={28} className="text-[#C4BCB4] hover:text-[#A68B77] transition-colors"/>
-                                                </button>
-                                                <span className="font-bold min-w-[20px] text-center text-lg">{cart[p.id] || 0}</span>
-                                                <button onClick={() => setCart({...cart,[p.id]:(cart[p.id]||0)+1})}>
-                                                    <Icon name="PlusCircle" size={28} className="text-[#A68B77] hover:opacity-80 transition-opacity"/>
-                                                </button>
-                                            </div>
-                                        </div>
+    <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
+        {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-5 text-[#D9C5B2]" size={24} />}
+    </div>
+    
+    <div className="flex-1 min-w-0">
+        <p className="text-[9px] font-black text-[#A68B77] uppercase">{p.category}</p>
+        <h4 className="font-bold text-sm truncate">{p.name}</h4>
+        <p className="font-black text-[#A68B77] text-lg">${p.proxyPrice}</p>
+    </div>
+
+    {/* 數量調整區：確保左右都有按鈕 */}
+    <div className="flex items-center gap-2 shrink-0 bg-[#F9F7F5] p-1.5 rounded-xl">
+        <button 
+            onClick={() => { 
+                const q = (cart[p.id] || 0) - 1; 
+                if(q <= 0){
+                    const {[p.id]:_, ...rest} = cart; 
+                    setCart(rest);
+                } else {
+                    setCart({...cart, [p.id]: q});
+                } 
+            }}
+            className="hover:scale-110 active:scale-90 transition-transform"
+        >
+            <Icon name="MinusCircle" size={26} className="text-[#C4BCB4]"/>
+        </button>
+        
+        <span className="font-bold min-w-[24px] text-center text-base">
+            {cart[p.id] || 0}
+        </span>
+        
+        <button 
+            onClick={() => setCart({...cart, [p.id]: (cart[p.id] || 0) + 1})}
+            className="hover:scale-110 active:scale-90 transition-transform"
+        >
+            <Icon name="PlusCircle" size={26} className="text-[#A68B77]"/>
+        </button>
+    </div>
+</div>
                                     ))}
                                 </div>
 
