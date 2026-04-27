@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人代購作業助手</title>
     
-    <!-- 1. 載入 CSS -->
+    <!-- 1. 載入 CSS (移除所有方括號符號) -->
     <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <style>
         @import url('[https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap](https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap)');
@@ -16,7 +16,7 @@
         select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 載入核心庫 (請確認 src 內無方括號) -->
+    <!-- 2. 載入核心庫 (純淨網址格式) -->
     <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
     <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
     <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
@@ -34,7 +34,6 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // 使用 IIFE 防止全域變數衝突
         (() => {
             const { useState, useEffect, useMemo, useRef } = React;
             
@@ -44,14 +43,14 @@
                 Copy, Send, Loader2, X, Tag, Calculator, ChevronDown, CheckCircle2, AlertCircle, Filter, Trash2
             } = Icons;
 
-            // --- 核心配置：請務必填入您在 Firebase Console 看到的資訊 ---
+            // --- 核心配置：請務必填入您在 Firebase Console 看到的資訊 (重要！) ---
             const firebaseConfig = {
                 apiKey: "AIzaSyASLINtHCAfw8kzW00vENpqMP1--I6eHWE",
                 authDomain: "my-proxy-helper.firebaseapp.com",
                 projectId: "my-proxy-helper",
                 storageBucket: "my-proxy-helper.firebasestorage.app",
                 messagingSenderId: "692403246929",
-                appId: "1:692403246929:web:94dade7422ad100918a570"
+                appId: "1:692403246929:web:94dade7422ad100918a570",
             };
 
             const GAS_WEBHOOK_URL = "[https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec](https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec)";
@@ -172,8 +171,8 @@
                                     </section>
                                     <div className="space-y-3 pb-20">
                                         {products.filter(p => orderFilterCategory === '全部' || p.category === orderFilterCategory).map(p => (
-                                            <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 shadow-sm active:scale-[0.98]">
-                                                <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
+                                            <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 shadow-sm transition-all active:scale-[0.98]">
+                                                <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0 border border-[#eee]">
                                                     {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package size={20} className="m-6 text-[#D9C5B2]" />}
                                                 </div>
                                                 <div className="flex-1 truncate">
@@ -212,7 +211,7 @@
                                 <div className="space-y-6 animate-in">
                                     <section className="bg-white p-6 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-6">
                                         <h3 className="font-black text-base text-[#5D544C] flex items-center gap-2 tracking-tight"><PlusCircle size={18} className="text-[#A68B77]"/>錄入商品</h3>
-                                        <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#F9F7F5] rounded-2xl border-2 border-dashed border-[#DCD9CD] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
+                                        <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#F9F7F5] rounded-2xl border-2 border-dashed border-[#DCD9CD] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group hover:border-[#A68B77] transition-colors">
                                             {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="w-full h-full object-cover" /> : <><Camera size={40} className="text-[#C4BCB4] mb-2"/><span className="text-[10px] font-black text-[#C4BCB4] uppercase">拍攝照片</span></>}
                                             {newProduct.imageUrl && <button onClick={(e)=>{e.stopPropagation(); setNewProduct(p=>({...p,imageUrl:''}));}} className="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded-full"><X size={14}/></button>}
                                         </div>
@@ -221,11 +220,11 @@
                                             <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
                                             <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
                                             <div className="grid grid-cols-2 gap-4">
-                                                <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
-                                                <input type="number" placeholder="代購價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none" value={newProduct.proxyPrice} readOnly />
+                                                <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none h-[56px]" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
+                                                <input type="number" placeholder="代購價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none h-[56px]" value={newProduct.proxyPrice} readOnly />
                                             </div>
                                         </div>
-                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); setNewProduct({category:'其他',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); alert('存入成功'); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-bold shadow-lg">存入庫存</button>
+                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); setNewProduct({category:'其他',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); alert('存入成功'); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">存入庫存</button>
                                     </section>
                                 </div>
                             )}
