@@ -16,48 +16,48 @@
         select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 載入 React 核心 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 2. 使用 cdnjs 載入 React 核心 (比 unpkg 更穩定) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
-    <!-- 3. 載入 Lucide 圖示 (使用固定版本避免 Infinity 衝突) -->
-    <script src="https://unpkg.com/lucide-react@0.263.0/dist/umd/lucide-react.min.js"></script>
+    <!-- 3. 載入 Lucide 圖示 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide-react.min.js"></script>
 
     <!-- 4. 載入 Firebase Compat 模組 -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    <!-- 5. 最後載入 Babel 轉譯器 -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 5. 載入 Babel 轉譯器 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // 使用 IIFE 防止變數衝突
+        // 使用立即執行函數避免 Infinity 等變數衝突
         (() => {
             const { useState, useEffect, useMemo, useRef } = React;
             
-            // 修正 LucideReact 存取邏輯
-            const Icons = window.LucideReact || window.lucideReact;
+            // 安全取得 Lucide 圖示
+            const Icons = window.LucideReact;
             if (!Icons) {
-                console.error("LucideReact library not found.");
+                document.getElementById('root').innerHTML = '<div style="padding:20px;text-align:center;">圖示庫載入失敗，請重新整理頁面。</div>';
                 return;
             }
 
             const { 
                 Package, ShoppingCart, Camera, Settings: SettingsIcon, PlusCircle, MinusCircle, 
-                Copy, Send, Loader2, X, Tag, Calculator, ChevronDown, CheckCircle2, AlertCircle, Filter, Trash2
+                Copy, Send, Loader2, X, Tag, Calculator, ChevronDown, CheckCircle2, AlertCircle, Trash2
             } = Icons;
 
-            // --- 核心配置：請務必在此填入您的 Firebase Console 資訊 ---
+            // --- 核心配置：請務必填入您在 Firebase Console 看到的資訊 ---
             const firebaseConfig = {
                 apiKey: "AIzaSyASLINtHCAfw8kzW00vENpqMP1--I6eHWE",
                 authDomain: "my-proxy-helper.firebaseapp.com",
                 projectId: "my-proxy-helper",
                 storageBucket: "my-proxy-helper.firebasestorage.app",
-                mmessagingSenderId: "692403246929",
+                messagingSenderId: "692403246929",
                 appId: "1:692403246929:web:94dade7422ad100918a570",
             };
 
@@ -161,11 +161,19 @@
 
                         <main className="flex-1 px-5 py-4 pb-32">
                             <div className="flex gap-1.5 mb-8 bg-[#EAE3DB] p-1.5 rounded-2xl shadow-inner">
-                                {[{id:'order',l:'接單',i:ShoppingCart},{id:'admin',l:'管理',i:Camera},{id:'settings',l:'設定',i:SettingsIcon}].map(t => (
-                                    <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 flex flex-col items-center py-2.5 rounded-xl transition-all ${activeTab === t.id ? 'bg-white shadow-sm' : 'opacity-60'}`}>
-                                        <t.i size={16}/><span className="text-[10px] font-black mt-1">{t.l}</span>
-                                    </button>
-                                ))}
+                                {[
+                                    { id: 'order', label: '接單', icon: ShoppingCart },
+                                    { id: 'admin', label: '管理', icon: Camera },
+                                    { id: 'settings', label: '設定', icon: SettingsIcon },
+                                ].map(t => {
+                                    const Icon = t.icon;
+                                    return (
+                                        <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 flex flex-col items-center py-2.5 rounded-xl transition-all duration-300 ${activeTab === t.id ? 'bg-white shadow-sm' : 'opacity-60'}`}>
+                                            <Icon size={16}/>
+                                            <span className="text-[10px] font-black mt-1">{t.label}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {activeTab === 'order' && (
@@ -187,7 +195,7 @@
                                                     {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package size={20} className="m-6 text-[#D9C5B2]" />}
                                                 </div>
                                                 <div className="flex-1 truncate">
-                                                    <p className="text-[9px] font-black text-[#A68B77]">{p.category}</p>
+                                                    <p className="text-[9px] font-black text-[#A68B77] uppercase">{p.category}</p>
                                                     <h4 className="font-bold text-sm truncate">{p.name}</h4>
                                                     <p className="font-black text-[#A68B77]">${p.proxyPrice}</p>
                                                 </div>
@@ -228,7 +236,7 @@
                                         </div>
                                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={e => { const r = new FileReader(); r.onloadend = () => setNewProduct(p => ({...p, imageUrl: r.result})); r.readAsDataURL(e.target.files[0]); }} />
                                         <div className="space-y-4">
-                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none shadow-sm" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
                                             <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none placeholder:text-[#C4BCB4]" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="flex flex-col space-y-1.5">
