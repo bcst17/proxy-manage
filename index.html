@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人代購作業助手</title>
     
-    <!-- 1. 載入 CSS 與 字體 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -13,19 +12,16 @@
         .animate-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { display: none; }
-        select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     
-    <!-- 3. Firebase SDK (Compat 版) -->
+    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <!-- 4. Babel 轉譯器 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
 </head>
 <body>
@@ -33,43 +29,26 @@
 
     <script type="text/babel">
         (() => {
-            const { useState, useEffect, useMemo, useRef } = React;
+            const { useState, useEffect, useRef } = React;
             
-            // --- 內嵌式 SVG 圖標組件 (解決 CDN 圖標載入失敗問題) ---
+            // 修正：嚴格檢查是否為有效的 React 組件
             const Icon = ({ name, size = 24, className = "" }) => {
-                const paths = {
-                    Package: <path d="m7.5 4.27 9 5.15L21 5.2l-9-5.2zm13.5 10.16V5.2L12 10.36l9 5.22v4.84l-9 5.22-9-5.22V10.36L12 5.2z" />,
-                    ShoppingCart: <><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></>,
-                    Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
-                    // 修正處：這裡原本漏掉了 <> </> 包裹多個元素
-                    Settings: <><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>,
-                    PlusCircle: <><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></>,
-                    MinusCircle: <><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></>,
-                    ChevronDown: <path d="m6 9 6 6 6-6"/>,
-                    Loader2: <path d="M21 12a9 9 0 1 1-6.21-8.56"/>,
-                    Copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
-                    Send: <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>,
-                    X: <path d="M18 6 6 18"/><path d="m6 6 12 12"/>,
-                    Tag: <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/>,
-                    Calculator: <><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></>,
-                    Trash2: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>
-                };
-
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                        {paths[name] || null}
-                    </svg>
-                );
+                const Lib = window.LucideReact;
+                if (Lib && Lib[name]) {
+                    const LucideIcon = Lib[name];
+                    return <LucideIcon size={size} className={className} />;
+                }
+                // 載入中或失敗時顯示透明佔位符，避免報錯
+                return <span style={{ width: size, height: size, display: 'inline-block' }} className={className}></span>;
             };
 
-            // --- 核心配置：請務必填入您的 Firebase 資訊 ---
             const firebaseConfig = {
                 apiKey: "AIzaSyASLINtHCAfw8kzW00vENpqMP1--I6eHWE",
                 authDomain: "my-proxy-helper.firebaseapp.com",
                 projectId: "my-proxy-helper",
                 storageBucket: "my-proxy-helper.firebasestorage.app",
                 messagingSenderId: "692403246929",
-                appId: "1:692403246929:web:94dade7422ad100918a570"
+                appId: "1:692403246929:web:94dade7422ad100918a570",
             };
 
             const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec";
@@ -94,20 +73,17 @@
                     bankInfo: '銀行代碼：000\n帳號：1234-5678-9012\n戶名：您的名字',
                     categories: ["哆啦A夢", "進擊的巨人", "任天堂", "迪士尼", "Beams", "其他"]
                 });
-                const [newProduct, setNewProduct] = useState({ category: '其他', name: '', originalPrice: '', proxyPrice: '', imageUrl: '' });
+                const [newProduct, setNewProduct] = useState({ category: '', name: '', originalPrice: '', proxyPrice: '', imageUrl: '' });
+                const [newCatInput, setNewCatInput] = useState('');
                 const fileInputRef = useRef(null);
 
                 useEffect(() => {
-                    auth.signInAnonymously().then(cred => {
-                        setUser(cred.user);
-                    });
-                    
+                    auth.signInAnonymously().then(cred => setUser(cred.user));
                     const unsubP = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products')
                         .onSnapshot((snap) => {
                             setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                             setLoading(false);
-                        }, () => setLoading(false));
-
+                        });
                     const unsubAuth = auth.onAuthStateChanged(u => {
                         if(u) {
                             setUser(u);
@@ -118,34 +94,10 @@
                     return () => { unsubP(); unsubAuth(); };
                 }, []);
 
-                const calculateProxyPrice = (orig) => {
-                    if (!orig || isNaN(orig)) return '';
-                    const raw = Number(orig) * 0.2 * 1.1;
-                    return raw % 10 === 0 ? raw : Math.ceil(raw / 10) * 10;
-                };
-
-                const generateMessage = () => {
-                    if (!customerName) return alert("請輸入客戶姓名");
-                    const itemsText = Object.entries(cart).map(([id, qty]) => {
-                        const p = products.find(item => item.id === id);
-                        return `${p.name} (${p.category}) x ${qty} = $${p.proxyPrice * qty}`;
-                    }).join('\n');
-                    const total = Object.entries(cart).reduce((s, [id, q]) => s + (products.find(p=>p.id===id)?.proxyPrice || 0) * q, 0);
-                    setGeneratedMsg(`【代購訂單確認】\n客戶：${customerName}\n\n訂單明細：\n${itemsText}\n\n總計金額：$${total}\n\n--- 匯款資訊 ---\n${settings.bankInfo}\n\n請於匯款後告知後五碼，謝謝！`);
-                };
-
-                const submitToSheets = async () => {
-                    setIsSubmitting(true);
-                    const orderItems = Object.entries(cart).map(([id, qty]) => {
-                        const p = products.find(item => item.id === id);
-                        return { category: p.category, name: p.name, origPrice: p.originalPrice, proxyPrice: p.proxyPrice, qty };
-                    });
-                    try {
-                        await fetch(GAS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ customerName, items: orderItems, timestamp: new Date().toLocaleString() }) });
-                        alert("同步成功！");
-                        setCart({}); setCustomerName(''); setGeneratedMsg('');
-                    } catch (e) { alert("同步失敗"); }
-                    finally { setIsSubmitting(false); }
+                const deleteProduct = async (id) => {
+                    if(confirm("確定要刪除此商品嗎？")) {
+                        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').doc(id).delete();
+                    }
                 };
 
                 if (loading) return <div className="flex h-screen items-center justify-center"><Icon name="Loader2" className="animate-spin text-[#A68B77]" size={40} /></div>;
@@ -154,8 +106,7 @@
                     <div className="max-w-md mx-auto min-h-screen flex flex-col text-[#5D544C]">
                         <header className="px-6 py-6 flex justify-between items-center bg-white/40 backdrop-blur-md sticky top-0 z-50">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <Icon name="Package" className="text-[#A68B77]" size={22} />
-                                代購小助手
+                                <Icon name="Package" className="text-[#A68B77]" size={22} /> 代購小助手
                             </h1>
                             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-full border border-[#E5DED4]">
                                 <div className="w-1.5 h-1.5 bg-[#A68B77] rounded-full animate-pulse"></div>
@@ -164,18 +115,18 @@
                         </header>
 
                         <main className="flex-1 px-5 py-4 pb-32">
-                            <div className="flex gap-1.5 mb-8 bg-[#EAE3DB] p-1.5 rounded-2xl shadow-inner">
+                            <nav className="flex gap-1.5 mb-8 bg-[#EAE3DB] p-1.5 rounded-2xl shadow-inner">
                                 {[
-                                    { id: 'order', label: '接單', icon: 'ShoppingCart' },
-                                    { id: 'admin', label: '管理', icon: 'Camera' },
-                                    { id: 'settings', label: '設定', icon: 'Settings' },
+                                    { id: 'order', label: '快速接單', icon: 'ShoppingCart' },
+                                    { id: 'admin', label: '商品管理', icon: 'Camera' },
+                                    { id: 'settings', label: '系統設定', icon: 'Settings' },
                                 ].map(t => (
                                     <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 flex flex-col items-center py-2.5 rounded-xl transition-all duration-300 ${activeTab === t.id ? 'bg-white shadow-sm' : 'opacity-60'}`}>
                                         <Icon name={t.icon} size={18}/>
                                         <span className="text-[10px] font-black mt-1">{t.label}</span>
                                     </button>
                                 ))}
-                            </div>
+                            </nav>
 
                             {activeTab === 'order' && (
                                 <div className="space-y-6 animate-in">
@@ -189,36 +140,62 @@
                                             <Icon name="ChevronDown" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C4BCB4]" size={16}/>
                                         </div>
                                     </section>
+
                                     <div className="space-y-3 pb-20">
                                         {products.filter(p => orderFilterCategory === '全部' || p.category === orderFilterCategory).map(p => (
-                                            <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 shadow-sm active:scale-[0.98]">
-                                                <div className="w-20 h-20 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
-                                                    {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-7 text-[#D9C5B2]" size={24} />}
+                                            <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4">
+                                                <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0">
+                                                    {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-5 text-[#D9C5B2]" size={24} />}
                                                 </div>
                                                 <div className="flex-1 truncate">
                                                     <p className="text-[9px] font-black text-[#A68B77] uppercase">{p.category}</p>
                                                     <h4 className="font-bold text-sm truncate">{p.name}</h4>
                                                     <p className="font-black text-[#A68B77] text-lg">${p.proxyPrice}</p>
                                                 </div>
-                                                <div className="flex items-center gap-3 bg-[#F9F7F5] p-1.5 rounded-full border border-[#E5DED4]">
-                                                    <button onClick={() => { const q = (cart[p.id] || 0) - 1; if(q<=0){const {[p.id]:_, ...rest}=cart; setCart(rest)}else{setCart({...cart,[p.id]:q})} }}><Icon name="MinusCircle" size={28} className="text-[#C4BCB4]"/></button>
-                                                    <span className="font-bold min-w-[20px] text-center text-sm">{cart[p.id] || 0}</span>
-                                                    <button onClick={() => setCart({...cart,[p.id]:(cart[p.id]||0)+1})}><Icon name="PlusCircle" size={28} className="text-[#A68B77]"/></button>
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <button onClick={() => { const q = (cart[p.id] || 0) - 1; if(q<=0){const {[p.id]:_, ...rest}=cart; setCart(rest)}else{setCart({...cart,[p.id]:q})} }}>
+                                                        <Icon name="MinusCircle" size={28} className="text-[#C4BCB4] hover:text-[#A68B77]"/>
+                                                    </button>
+                                                    <span className="font-bold min-w-[20px] text-center text-lg">{cart[p.id] || 0}</span>
+                                                    <button onClick={() => setCart({...cart,[p.id]:(cart[p.id]||0)+1})}>
+                                                        <Icon name="PlusCircle" size={28} className="text-[#A68B77]"/>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
+
                                     {Object.keys(cart).length > 0 && (
-                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in slide-in-from-bottom">
-                                            <p className="text-2xl font-black ml-2">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
-                                            <button onClick={generateMessage} className="bg-white text-[#5D544C] px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all">產生訊息</button>
+                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in">
+                                            <p className="text-2xl font-black">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
+                                            <button onClick={() => {
+                                                const totalAmount = Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0);
+                                                const itemsText = Object.entries(cart).map(([id, q]) => { 
+                                                    const p = products.find(i => i.id === id); 
+                                                    return `${p.name} (${p.category}) x ${q} = $${p.proxyPrice * q}`; 
+                                                }).join('\n');
+                                                setGeneratedMsg(`【代購訂單確認】\n客戶：${customerName}\n\n訂單明細：\n${itemsText}\n\n總計金額：$${totalAmount}\n\n--- 匯款資訊 ---\n${settings.bankInfo}\n\n請於匯款後告知後五碼，謝謝！`);
+                                            }} className="bg-white text-[#5D544C] px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest">產生訊息</button>
                                         </div>
                                     )}
                                     {generatedMsg && (
                                         <div className="bg-white p-6 rounded-[2rem] border-2 border-[#F2ECE4] space-y-4 shadow-xl mb-32">
                                             <pre className="text-xs whitespace-pre-wrap leading-relaxed bg-[#F9F7F5] p-5 rounded-2xl max-h-48 overflow-y-auto">{generatedMsg}</pre>
                                             <button onClick={() => { navigator.clipboard.writeText(generatedMsg); setCopyStatus(true); setTimeout(()=>setCopyStatus(false),2000); }} className="w-full bg-[#F2ECE4] py-3 rounded-xl font-bold text-xs">{copyStatus?'已複製':'複製訊息'}</button>
-                                            <button onClick={submitToSheets} disabled={isSubmitting} className="w-full bg-[#A68B77] text-white py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">{isSubmitting ? <Icon name="Loader2" className="animate-spin" size={16}/> : <Icon name="Send" size={16}/>} 同步至總表</button>
+                                            <button onClick={async () => {
+                                                if (!customerName) return alert("請輸入姓名");
+                                                setIsSubmitting(true);
+                                                const orderItems = Object.entries(cart).map(([id, qty]) => {
+                                                    const p = products.find(item => item.id === id);
+                                                    return { category: p.category, name: p.name, origPrice: p.originalPrice, proxyPrice: p.proxyPrice, qty };
+                                                });
+                                                try {
+                                                    await fetch(GAS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ customerName, items: orderItems, timestamp: new Date().toLocaleString() }) });
+                                                    alert("訂單已同步至總表！");
+                                                    setCart({}); setCustomerName(''); setGeneratedMsg('');
+                                                } catch (e) { alert("同步失敗"); }
+                                                finally { setIsSubmitting(false); }
+                                            }} disabled={isSubmitting} className="w-full bg-[#A68B77] text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2">{isSubmitting ? <Icon name="Loader2" className="animate-spin" size={16}/> : <Icon name="Send" size={16}/>} 同步至總表</button>
                                         </div>
                                     )}
                                 </div>
@@ -227,22 +204,61 @@
                             {activeTab === 'admin' && (
                                 <div className="space-y-6 animate-in">
                                     <section className="bg-white p-6 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-6">
-                                        <h3 className="font-black text-base text-[#5D544C] flex items-center gap-2 tracking-tight"><Icon name="PlusCircle" size={18} className="text-[#A68B77]"/>錄入商品</h3>
-                                        <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#F9F7F5] rounded-2xl border-2 border-dashed border-[#DCD9CD] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group hover:border-[#A68B77] transition-colors">
-                                            {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="w-full h-full object-cover" /> : <><Icon name="Camera" size={40} className="text-[#C4BCB4] mb-2"/><span className="text-[10px] font-black text-[#C4BCB4] uppercase">拍攝照片</span></>}
-                                            {newProduct.imageUrl && <button onClick={(e)=>{e.stopPropagation(); setNewProduct(p=>({...p,imageUrl:''})); if(fileInputRef.current) fileInputRef.current.value='';}} className="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded-full"><Icon name="X" size={14}/></button>}
+                                        <h3 className="font-black text-base flex items-center gap-2 text-[#A68B77]"><Icon name="PlusCircle" size={18}/> 錄入商品</h3>
+                                        <div onClick={() => fileInputRef.current.click()} className="w-full h-44 bg-[#F9F7F5] rounded-3xl border-2 border-dashed border-[#DCD9CD] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group hover:border-[#A68B77]">
+                                            {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="w-full h-full object-cover" /> : (
+                                                <div className="text-center">
+                                                    <Icon name="Camera" size={44} className="text-[#C4BCB4] mb-3 mx-auto"/>
+                                                    <span className="text-xs font-black text-[#C4BCB4] uppercase tracking-wider">選取/拍攝照片</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={e => { const r = new FileReader(); r.onloadend = () => setNewProduct(p => ({...p, imageUrl: r.result})); r.readAsDataURL(e.target.files[0]); }} />
+                                        
                                         <div className="space-y-4">
-                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none shadow-sm" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
-                                            <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none placeholder:text-[#C4BCB4]" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
+                                            <div className="relative">
+                                                <select className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold appearance-none outline-none" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>
+                                                    <option value="" disabled>類別</option>
+                                                    {settings.categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                                <Icon name="ChevronDown" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C4BCB4]" size={16}/>
+                                            </div>
+                                            <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
                                             <div className="grid grid-cols-2 gap-4">
-                                                <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none h-[56px]" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
-                                                <input type="number" placeholder="代購價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none h-[56px]" value={newProduct.proxyPrice} readOnly />
+                                                <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.originalPrice} onChange={e => { 
+                                                    const orig = e.target.value;
+                                                    const raw = Number(orig) * 0.2 * 1.1;
+                                                    const pr = raw % 10 === 0 ? raw : Math.ceil(raw / 10) * 10;
+                                                    setNewProduct(p => ({...p, originalPrice: orig, proxyPrice: pr})); 
+                                                }} />
+                                                <input type="number" placeholder="代購價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none" value={newProduct.proxyPrice} readOnly />
                                             </div>
                                         </div>
-                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); setNewProduct({category:'其他',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); alert('存入成功'); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg active:scale-[0.98] transition-all">存入庫存</button>
+                                        <button onClick={async () => { 
+                                            if(!newProduct.name || !newProduct.category) return alert("請填寫品名與類別");
+                                            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); 
+                                            setNewProduct({category:'',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); 
+                                            alert('商品已存入庫存'); 
+                                        }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">存入庫存</button>
                                     </section>
+
+                                    <div className="space-y-3 pb-20">
+                                        <h3 className="font-black text-xs text-[#A68B77] px-2 flex items-center gap-2"><Icon name="List" size={14}/> 目前庫存商品</h3>
+                                        {products.map(p => (
+                                            <div key={p.id} className="relative bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 group">
+                                                <div className="w-12 h-12 bg-[#F9F7F5] rounded-lg overflow-hidden shrink-0">
+                                                    {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Icon name="Package" className="m-3 text-[#D9C5B2]" size={18} />}
+                                                </div>
+                                                <div className="flex-1 truncate">
+                                                    <p className="text-[8px] font-bold text-[#A68B77]">{p.category}</p>
+                                                    <h4 className="font-bold text-xs truncate">{p.name}</h4>
+                                                </div>
+                                                <button onClick={() => deleteProduct(p.id)} className="p-2 text-[#C4BCB4] hover:text-red-400">
+                                                    <Icon name="Trash2" size={18}/>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
@@ -250,30 +266,34 @@
                                 <div className="space-y-6 animate-in">
                                     <section className="bg-white p-7 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-7">
                                         <div className="space-y-4">
-                                            <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="Tag" size={14} className="text-[#A68B77]"/>分類項目管理</label>
+                                            <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="Tag" size={14} className="text-[#A68B77]"/>分類管理</label>
                                             <div className="flex gap-2">
-                                                <input type="text" placeholder="新類別" className="flex-1 p-3.5 bg-[#F9F7F5] rounded-xl text-xs font-bold outline-none" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} />
-                                                <button onClick={() => { if(!newCatInput || !user) return; const n={...settings,categories:[...settings.categories,newCatInput]}; setSettings(n); db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n); setNewCatInput(''); }} className="bg-[#5D544C] text-white px-5 rounded-xl font-bold shadow-md active:scale-90 transition-transform">+</button>
+                                                <input type="text" placeholder="新類別名稱" className="flex-1 p-3.5 bg-[#F9F7F5] rounded-xl text-xs font-bold outline-none" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} />
+                                                <button onClick={() => { if(!newCatInput || !user) return; const n={...settings,categories:[...settings.categories,newCatInput]}; setSettings(n); db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n); setNewCatInput(''); }} className="bg-[#5D544C] text-white px-5 rounded-xl font-bold shadow-md">+</button>
                                             </div>
                                             <div className="flex flex-wrap gap-2 pt-2">
                                                 {settings.categories.map(c => (
-                                                    <span key={c} className="bg-[#F2ECE4] px-4 py-2 rounded-lg text-[10px] font-black border border-[#E5DED4] flex items-center gap-2 text-[#5D544C]">
+                                                    <span key={c} className="bg-[#F2ECE4] pl-4 pr-2 py-2 rounded-lg text-[10px] font-black border border-[#E5DED4] flex items-center gap-2 text-[#5D544C]">
                                                         {c}
-                                                        {c!=='其他' && <button onClick={()=>{ if(!user) return; const n={...settings,categories:settings.categories.filter(x=>x!==c)};setSettings(n);db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n);}}><Icon name="X" size={10}/></button>}
+                                                        {c!=='其他' && (
+                                                            <button onClick={()=>{ if(!user) return; const n={...settings,categories:settings.categories.filter(x=>x!==c)};setSettings(n);db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n);}} className="p-1 hover:text-red-500">
+                                                                <Icon name="X" size={12}/>
+                                                            </button>
+                                                        )}
                                                     </span>
                                                 ))}
                                             </div>
                                         </div>
                                         <div className="h-px bg-[#F2ECE4] w-full"></div>
                                         <div className="space-y-4">
-                                            <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="Tag" size={14} className="text-[#A68B77]"/>匯款資訊範本</label>
+                                            <label className="text-[10px] font-black text-[#8C8179] flex items-center gap-2"><Icon name="FileText" size={14} className="text-[#A68B77]"/>匯款資訊範本</label>
                                             <textarea rows="5" className="w-full p-5 bg-[#F9F7F5] rounded-2xl text-xs font-mono outline-none text-[#5D544C] border border-[#E5DED4]" value={settings.bankInfo} onChange={e => setSettings({...settings, bankInfo: e.target.value})} />
                                         </div>
                                         <button onClick={async () => {
-                                            if(!user) return;
+                                            if (!user) return alert("尚未連線");
                                             try {
                                                 await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(settings);
-                                                alert("設定更新成功");
+                                                alert("設定已儲存");
                                             } catch (e) { alert("儲存失敗"); }
                                         }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">更新系統設定</button>
                                     </section>
