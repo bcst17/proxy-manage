@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人代購作業助手</title>
     
-    <!-- 1. 載入 CSS (移除所有方括號符號) -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- 1. 載入 Tailwind CSS (確保網址無方括號) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('[https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap](https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap)');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #F2ECE4; -webkit-tap-highlight-color: transparent; }
         .animate-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -16,24 +16,25 @@
         select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 載入核心庫 (純淨網址格式) -->
-    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
-    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
-    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
-    <script src="[https://unpkg.com/lucide-react@latest](https://unpkg.com/lucide-react@latest)"></script>
+    <!-- 2. 載入核心庫 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
 
-    <!-- 3. 載入 Firebase Compat 模組 -->
-    <script src="[https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js)"></script>
+    <!-- 3. 載入 Firebase Compat 模組 (手機部署最穩定) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <!-- 4. 載入 Babel 轉譯器 -->
-    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
+        // 使用 IIFE 防止變數衝突
         (() => {
             const { useState, useEffect, useMemo, useRef } = React;
             
@@ -43,7 +44,7 @@
                 Copy, Send, Loader2, X, Tag, Calculator, ChevronDown, CheckCircle2, AlertCircle, Filter, Trash2
             } = Icons;
 
-            // --- 核心配置：請務必填入您在 Firebase Console 看到的資訊 (重要！) ---
+            // --- 核心配置：請務必在此填入您的 Firebase Console 資訊 ---
             const firebaseConfig = {
                 apiKey: "AIzaSyASLINtHCAfw8kzW00vENpqMP1--I6eHWE",
                 authDomain: "my-proxy-helper.firebaseapp.com",
@@ -53,7 +54,8 @@
                 appId: "1:692403246929:web:94dade7422ad100918a570",
             };
 
-            const GAS_WEBHOOK_URL = "[https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec](https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec)";
+            // GAS 網址已修復為標準格式
+            const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx8k3PYh9E2yrQaJcSPHjswMr4Vf4e9_HY9P1b_lBtV35NoTpqkMg1jk1zbBodQJ1zSYg/exec";
 
             // 初始化 Firebase
             if (!firebase.apps.length) {
@@ -162,7 +164,7 @@
                                     <section className="bg-white p-6 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-4">
                                         <input type="text" placeholder="客戶姓名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl outline-none font-bold placeholder:text-[#C4BCB4]" value={customerName} onChange={e => setCustomerName(e.target.value)} />
                                         <div className="relative">
-                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none" value={orderFilterCategory} onChange={e => setOrderFilterCategory(e.target.value)}>
+                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none shadow-sm" value={orderFilterCategory} onChange={e => setOrderFilterCategory(e.target.value)}>
                                                 <option value="全部">全部商品</option>
                                                 {settings.categories.map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
@@ -172,7 +174,7 @@
                                     <div className="space-y-3 pb-20">
                                         {products.filter(p => orderFilterCategory === '全部' || p.category === orderFilterCategory).map(p => (
                                             <div key={p.id} className="bg-white p-3 rounded-2xl border border-[#E5DED4] flex items-center gap-4 shadow-sm transition-all active:scale-[0.98]">
-                                                <div className="w-16 h-16 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0 border border-[#eee]">
+                                                <div className="w-20 h-20 bg-[#F9F7F5] rounded-xl overflow-hidden shrink-0 border border-[#eee]">
                                                     {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package size={20} className="m-6 text-[#D9C5B2]" />}
                                                 </div>
                                                 <div className="flex-1 truncate">
@@ -189,7 +191,7 @@
                                         ))}
                                     </div>
                                     {Object.keys(cart).length > 0 && (
-                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50">
+                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in slide-in-from-bottom">
                                             <p className="text-2xl font-black">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
                                             <button onClick={generateMessage} className="bg-white text-[#5D544C] px-8 py-3 rounded-2xl font-bold text-xs uppercase active:scale-95 transition-all">產生訊息</button>
                                         </div>
@@ -201,7 +203,7 @@
                                                 <button onClick={() => { navigator.clipboard.writeText(generatedMsg); setCopyStatus(true); setTimeout(()=>setCopyStatus(false),2000); }} className={`text-[10px] px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 ${copyStatus ? 'bg-[#7ac29a] text-white' : 'bg-[#F9F7F5] text-[#8C8179]'}`}>{copyStatus ? <CheckCircle2 size={14}/> : <Copy size={14}/>}{copyStatus ? '已複製' : '複製訊息'}</button>
                                             </div>
                                             <pre className="text-xs whitespace-pre-wrap leading-relaxed bg-[#F9F7F5] p-5 rounded-2xl max-h-48 overflow-y-auto">{generatedMsg}</pre>
-                                            <button onClick={submitToSheets} disabled={isSubmitting} className="w-full bg-[#A68B77] text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2">{isSubmitting ? <Loader2 className="animate-spin" size={16}/> : <Send size={16}/>} 同步至總表</button>
+                                            <button onClick={submitToSheets} disabled={isSubmitting} className="w-full bg-[#A68B77] text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all">{isSubmitting ? <Loader2 className="animate-spin" size={16}/> : <Send size={16}/>} 同步至總表</button>
                                         </div>
                                     )}
                                 </div>
@@ -217,14 +219,20 @@
                                         </div>
                                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={e => { const r = new FileReader(); r.onloadend = () => setNewProduct(p => ({...p, imageUrl: r.result})); r.readAsDataURL(e.target.files[0]); }} />
                                         <div className="space-y-4">
-                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
-                                            <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
+                                            <select className="w-full p-4 bg-white border border-[#E5DED4] rounded-2xl font-bold appearance-none shadow-sm" value={newProduct.category} onChange={e => setNewProduct(p => ({...p, category: e.target.value}))}>{settings.categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                                            <input type="text" placeholder="品名" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none placeholder:text-[#C4BCB4]" value={newProduct.name} onChange={e => setNewProduct(p => ({...p, name: e.target.value}))} />
                                             <div className="grid grid-cols-2 gap-4">
-                                                <input type="number" placeholder="原價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none h-[56px]" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
-                                                <input type="number" placeholder="代購價" className="p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none h-[56px]" value={newProduct.proxyPrice} readOnly />
+                                                <div className="flex flex-col space-y-1.5">
+                                                    <label className="text-[10px] font-black text-[#8C8179] uppercase ml-1">原價</label>
+                                                    <input type="number" placeholder="0" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold outline-none h-[56px]" value={newProduct.originalPrice} onChange={e => { const pr = calculateProxyPrice(e.target.value); setNewProduct(p => ({...p, originalPrice: e.target.value, proxyPrice: pr})); }} />
+                                                </div>
+                                                <div className="flex flex-col space-y-1.5">
+                                                    <label className="text-[10px] font-black text-[#A68B77] uppercase ml-1 flex items-center gap-1">代購價 <Calculator size={10}/></label>
+                                                    <input type="number" placeholder="自動算" className="w-full p-4 bg-[#F9F7F5] rounded-2xl font-bold text-[#A68B77] outline-none h-[56px]" value={newProduct.proxyPrice} readOnly />
+                                                </div>
                                             </div>
                                         </div>
-                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); setNewProduct({category:'其他',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); alert('存入成功'); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg">存入庫存</button>
+                                        <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); setNewProduct({category:'其他',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); alert('存入成功'); }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all">存入庫存</button>
                                     </section>
                                 </div>
                             )}
