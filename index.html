@@ -38,15 +38,14 @@
         (() => {
             const { useState, useEffect, useMemo, useRef } = React;
             
-            // 修正圖示組件，直接從全域物件抓取
-            const Icon = ({ name, size = 24, className = "" }) => {
-                const Lib = window.LucideReact || window.lucideReact;
-                if (!Lib || !Lib[name]) {
-                    return <span className={`inline-block bg-gray-300 rounded-full ${className}`} style={{ width: size, height: size }}></span>;
-                }
-                const LucideIcon = Lib[name];
-                return <LucideIcon size={size} className={className} />;
-            };
+            // 修正圖示組件，確保能直接抓取 Lucide 資源
+const Icon = ({ name, size = 24, className = "" }) => {
+    const Lib = window.LucideReact || window.lucide;
+    // 如果找不到圖示，回傳 null 而不再顯示灰色圓圈
+    if (!Lib || !Lib[name]) return null;
+    const LucideIcon = Lib[name];
+    return <LucideIcon size={size} className={className} />;
+};
 
             // --- 核心配置：請務必填入您的 Firebase 資訊 ---
             const firebaseConfig = {
@@ -198,14 +197,20 @@
                                         ))}
                                     </div>
                                     {Object.keys(cart).length > 0 && (
-                                        <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in slide-in-from-bottom">
-                                            <p className="text-2xl font-black">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
-                                            <button onClick={() => {
-                                                const itemsText = Object.entries(cart).map(([id, q]) => { const p = products.find(i => i.id === id); return `${p.name} x ${q} = $${p.proxyPrice * q}`; }).join('\n');
-                                                setGeneratedMsg(`【代購訂單】\n客戶：${customerName}\n\n明細：\n${itemsText}\n\n匯款資訊：\n${settings.bankInfo}`);
-                                            }} className="bg-white text-[#5D544C] px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest">產生訊息</button>
-                                        </div>
-                                    )}
+    <div className="fixed bottom-6 left-4 right-4 bg-[#5D544C] text-white p-5 rounded-[2rem] flex justify-between items-center shadow-xl z-50 animate-in">
+        <p className="text-2xl font-black">${Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0)}</p>
+        <button onClick={() => {
+            const totalAmount = Object.entries(cart).reduce((s,[id,q])=>s+(products.find(p=>p.id===id)?.proxyPrice||0)*q,0);
+            const itemsText = Object.entries(cart).map(([id, q]) => { 
+                const p = products.find(i => i.id === id); 
+                return `${p.name} (${p.category}) x ${q} = $${p.proxyPrice * q}`; 
+            }).join('\n');
+            
+            // 依照您要求的範例格式更新
+            setGeneratedMsg(`【代購訂單確認】\n客戶：${customerName}\n\n訂單明細：\n${itemsText}\n\n總計金額：$${totalAmount}\n\n--- 匯款資訊 ---\n${settings.bankInfo}\n\n請於匯款後告知後五碼，謝謝！`);
+        }} className="bg-white text-[#5D544C] px-8 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest">產生訊息</button>
+    </div>
+)}
                                     {generatedMsg && (
                                         <div className="bg-white p-6 rounded-[2rem] border-2 border-[#F2ECE4] space-y-4 shadow-xl mb-32">
                                             <pre className="text-xs whitespace-pre-wrap leading-relaxed bg-[#F9F7F5] p-5 rounded-2xl max-h-48 overflow-y-auto">{generatedMsg}</pre>
