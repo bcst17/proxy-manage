@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人代購作業助手</title>
     
-    <!-- 1. 載入 CSS 與 字體 -->
+    <!-- 1. PWA 與 App Icon 設定 -->
+    <!-- 請確保您的圖片檔名為 icon.png 且與此檔案放在 GitHub 同一個路徑下 -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="代購助手">
+
+    <!-- 2. 載入 CSS 與 字體 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -16,16 +24,16 @@
         select { -webkit-appearance: none; appearance: none; }
     </style>
 
-    <!-- 2. 核心庫 -->
+    <!-- 3. 核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     
-    <!-- 3. Firebase SDK (Compat 版) -->
+    <!-- 4. Firebase SDK (Compat 版) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    <!-- 4. Babel 轉譯器 -->
+    <!-- 5. Babel 轉譯器 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
 </head>
 <body>
@@ -100,7 +108,7 @@
                 const [copyStatus, setCopyStatus] = useState(false);
                 const [isSubmitting, setIsSubmitting] = useState(false);
                 const [orderFilterCategory, setOrderFilterCategory] = useState('全部');
-                const [adminFilterCategory, setAdminFilterCategory] = useState('全部'); // 優化：管理分頁的過濾狀態
+                const [adminFilterCategory, setAdminFilterCategory] = useState('全部');
                 const [settings, setSettings] = useState({
                     bankInfo: '銀行代碼：000\n帳號：1234-5678-9012\n戶名：您的名字',
                     categories: ["哆啦A夢", "進擊的巨人", "任天堂", "迪士尼", "Beams", "其他"]
@@ -146,7 +154,7 @@
                     }).join('\n');
                     const total = Object.entries(cart).reduce((s, [id, q]) => s + (products.find(p=>p.id===id)?.proxyPrice || 0) * q, 0);
                     const deposit = total * 0.5;
-                    setGeneratedMsg(`【代購訂單確認】\n客戶：${customerName}\n\n訂單明細：\n${itemsText}\n\n總計金額：$${total}\n訂金金額：$${deposit}\n\n--- 匯款資訊 ---\n${settings.bankInfo}\n\n請匯款訂金後告知帳號後五碼，謝謝！`);
+                    setGeneratedMsg(`【代購訂單確認】\n客戶：${customerName}\n\n訂單明細：\n${itemsText}\n\n總計金額：$${total}\n訂金金額：$${deposit}\n\n--- 匯款資訊 ---\n${settings.bankInfo}\n\n請於匯款後告知後五碼，謝謝！`);
                 };
 
                 const submitToSheets = async () => {
@@ -231,7 +239,7 @@
                                     )}
                                     {generatedMsg && (
                                         <div className="bg-white p-6 rounded-[2rem] border-2 border-[#F2ECE4] space-y-4 shadow-xl mb-32">
-                                            <pre className="text-xs whitespace-pre-wrap leading-relaxed bg-[#F9F7F5] p-5 rounded-2xl max-h-48 overflow-y-auto">{generatedMsg}</pre>
+                                            <pre className="text-xs whitespace-pre-wrap leading-relaxed bg-[#F9F7F5] p-5 rounded-2xl max-h-48 overflow-y-auto font-sans">{generatedMsg}</pre>
                                             <button onClick={() => { navigator.clipboard.writeText(generatedMsg); setCopyStatus(true); setTimeout(()=>setCopyStatus(false),2000); }} className="w-full bg-[#F2ECE4] py-3 rounded-xl font-bold text-xs">{copyStatus?'已複製':'複製訊息'}</button>
                                             <button onClick={submitToSheets} disabled={isSubmitting} className="w-full bg-[#A68B77] text-white py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:bg-[#C4BCB4]">{isSubmitting ? <Icon name="Loader2" className="animate-spin" size={16}/> : <Icon name="Send" size={16}/>} 同步至總表</button>
                                         </div>
@@ -242,7 +250,7 @@
                             {activeTab === 'admin' && (
                                 <div className="space-y-6 animate-in">
                                     <section className="bg-white p-6 rounded-[2rem] border border-[#E5DED4] shadow-sm space-y-6">
-                                        <h3 className="font-black text-base text-[#5D544C] flex items-center gap-2 tracking-tight"><Icon name="PlusCircle" size={18} className="text-[#A68B77]"/>登錄商品</h3>
+                                        <h3 className="font-black text-base text-[#5D544C] flex items-center gap-2 tracking-tight"><Icon name="PlusCircle" size={18} className="text-[#A68B77]"/>錄入商品</h3>
                                         <div onClick={() => fileInputRef.current.click()} className="w-full h-40 bg-[#F9F7F5] rounded-2xl border-2 border-dashed border-[#DCD9CD] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group hover:border-[#A68B77] transition-colors">
                                             {newProduct.imageUrl ? <img src={newProduct.imageUrl} className="w-full h-full object-cover" /> : <><Icon name="Camera" size={40} className="text-[#C4BCB4] mb-2"/><span className="text-[10px] font-black text-[#C4BCB4] uppercase">拍攝照片</span></>}
                                             {newProduct.imageUrl && <button onClick={(e)=>{e.stopPropagation(); setNewProduct(p=>({...p,imageUrl:''})); if(fileInputRef.current) fileInputRef.current.value='';}} className="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded-full"><Icon name="X" size={14}/></button>}
@@ -273,14 +281,13 @@
                                             if(!newProduct.name) return alert("請輸入商品名稱");
                                             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('products').add({...newProduct, createdAt: Date.now()}); 
                                             setNewProduct({category:'',name:'',originalPrice:'',proxyPrice:'',imageUrl:''}); 
-                                            alert('加入成功'); 
-                                        }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg active:scale-[0.98] transition-all">加入庫存</button>
+                                            alert('存入成功'); 
+                                        }} className="w-full bg-[#5D544C] text-white py-4 rounded-2xl font-black shadow-lg active:scale-[0.98] transition-all">存入庫存</button>
                                     </section>
 
                                     <section className="space-y-3 pb-20">
                                         <div className="flex justify-between items-center ml-2 mr-2">
                                             <h3 className="font-black text-xs text-[#8C8179] uppercase tracking-widest">庫存管理 ({products.filter(p => adminFilterCategory === '全部' || p.category === adminFilterCategory).length})</h3>
-                                            {/* 優化：管理分頁新增分類過濾下拉選單 */}
                                             <div className="relative min-w-[120px]">
                                                 <select className="w-full py-1.5 pl-3 pr-8 bg-white border border-[#E5DED4] rounded-xl text-[10px] font-bold appearance-none" value={adminFilterCategory} onChange={e => setAdminFilterCategory(e.target.value)}>
                                                     <option value="全部">全部類別</option>
@@ -324,7 +331,6 @@
                                                 {settings.categories.map(c => (
                                                     <span key={c} className="bg-[#F2ECE4] px-4 py-2 rounded-lg text-[10px] font-black border border-[#E5DED4] flex items-center gap-2 text-[#5D544C]">
                                                         {c}
-                                                        {/* 優化：移除對 "其他" 類別不可刪除的限制 */}
                                                         <button onClick={()=>{ if(!user) return; const n={...settings,categories:settings.categories.filter(x=>x!==c)};setSettings(n);db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('settings').doc('config').set(n);}}><Icon name="X" size={10}/></button>
                                                     </span>
                                                 ))}
